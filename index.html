@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bar/Pub Elisir — San Giuseppe Jato</title>
+    <style>
+        :root {
+            --bg-color: #1a1614;
+            --card-bg: #26211e;
+            --text-color: #f3efe6;
+            --text-muted: #a39c90;
+            --border-color: #3d3530;
+            --primary: #d48c2e;
+            --primary-hover: #b87523;
+            --accent: #e5b388;
+            --nav-bg: #211c19;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f8f6f0;
+            --card-bg: #ffffff;
+            --text-color: #2b2623;
+            --text-muted: #756e66;
+            --border-color: #e2ded5;
+            --primary: #c2781d;
+            --primary-hover: #a56417;
+            --accent: #d4a373;
+            --nav-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; transition: background 0.2s, color 0.2s; }
+        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        /* Top Bar */
+        .top-header {
+            background-color: var(--nav-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        .brand-title { font-size: 18px; font-weight: 700; color: var(--primary); }
+        .brand-sub { font-size: 11px; color: var(--text-muted); }
+        .header-controls { display: flex; gap: 10px; align-items: center; }
+        .theme-toggle-btn, .home-btn {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* Schermate */
+        .screen { display: none; flex: 1; padding: 20px; overflow-y: auto; }
+        .screen.active { display: flex; flex-direction: column; }
+
+        .home-hero {
+            text-align: center;
+            padding: 30px 10px;
+            margin-bottom: 20px;
+        }
+        .home-hero h1 { font-size: 24px; margin-bottom: 6px; }
+        .home-hero p { font-size: 14px; color: var(--text-muted); }
+
+        .menu-windows-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .window-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.1s, border-color 0.2s;
+        }
+        .window-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .window-card .icon { font-size: 32px; margin-bottom: 12px; }
+        .window-card h3 { font-size: 16px; margin-bottom: 6px; }
+        .window-card p { font-size: 12px; color: var(--text-muted); }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .section-header h2 { font-size: 18px; }
+
+        /* Finestra Tavoli */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+        .table-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+        .table-box.occupied { border-color: var(--primary); background-color: rgba(212, 140, 46, 0.08); }
+        .table-box h4 { font-size: 15px; margin-bottom: 4px; }
+        .table-box span { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px; }
+        .table-actions { display: flex; gap: 4px; justify-content: center; }
+        .table-action-btn { background: var(--border-color); border: none; padding: 3px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; color: var(--text-color); }
+        .table-action-btn.pay { background: var(--primary); color: #fff; }
+
+        /* Finestra Ordinazioni con Foto */
+        .order-layout {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+        @media(max-width: 768px) { .order-layout { grid-template-columns: 1fr; overflow-y: auto; } }
+
+        .menu-sections-container { overflow-y: auto; padding-right: 5px; max-height: calc(100vh - 160px); }
+        .category-title { font-size: 14px; font-weight: bold; color: var(--primary); margin: 15px 0 8px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 4px; }
+        
+        .menu-item-row {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .menu-item-img {
+            width: 55px;
+            height: 55px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--border-color);
+            flex-shrink: 0;
+        }
+        .menu-item-info { flex: 1; }
+        .menu-item-info h5 { font-size: 13px; margin-bottom: 2px; }
+        .menu-item-info p { font-size: 11px; color: var(--text-muted); line-height: 1.2; margin-bottom: 4px; }
+        .menu-item-info .price { font-size: 12px; font-weight: bold; color: var(--primary); }
+        
+        .add-item-btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .notepad-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            height: fit-content;
+            max-height: calc(100vh - 160px);
+        }
+        .notepad-items { flex: 1; overflow-y: auto; margin-bottom: 10px; min-height: 150px; }
+        .notepad-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 6px 0;
+            border-bottom: 0.5px solid var(--border-color);
+        }
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .primary-btn:hover { background: var(--primary-hover); }
+
+        /* Finestra Cassa & Scontrino */
+        .cash-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        @media(max-width: 768px) { .cash-layout { grid-template-columns: 1fr; } }
+
+        .receipt-box {
+            background: #fff;
+            color: #111;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .receipt-center { text-align: center; margin-bottom: 10px; }
+        .receipt-line { display: flex; justify-content: space-between; margin: 4px 0; }
+        .receipt-total { border-top: 1px dashed #333; margin-top: 10px; padding-top: 6px; font-weight: bold; font-size: 14px; }
+
+        /* Stile Terminale POS */
+        .pos-terminal {
+            background: #111;
+            color: #0ff;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', Courier, monospace;
+            border: 3px solid #333;
+            margin-top: 15px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.8);
+        }
+        .pos-screen {
+            background: #001a1a;
+            border: 1px solid #0ff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            min-height: 80px;
+            margin-bottom: 10px;
+        }
+        .pos-btn-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        .pos-action-btn {
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        .pos-action-btn:hover { background: #333; color: #0ff; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <!-- Top Bar -->
+    <div class="top-header">
+        <div>
+            <div class="brand-title">Bar/Pub Elisir</div>
+            <div class="brand-sub">San Giuseppe Jato (PA) • Gestione Banco, Sala & Cassa</div>
+        </div>
+        <div class="header-controls">
+            <button class="home-btn" onclick="openScreen('home')">🏠 Menu Principale</button>
+            <button class="theme-toggle-btn" onclick="toggleTheme()">🌓 Tema</button>
+        </div>
+    </div>
+
+    <!-- ================= 1. HOME SCREEN ================= -->
+    <div id="screen-home" class="screen active">
+        <div class="home-hero">
+            <h1>Benvenuto al Bar/Pub Elisir! 🍸</h1>
+            <p>Seleziona una sezione per gestire le comande, consultare il menu o procedere agli incassi.</p>
+        </div>
+        <div class="menu-windows-grid">
+            <div class="window-card" onclick="openScreen('tables')">
+                <div class="icon">🪑</div>
+                <h3>Gestione Tavoli & Banco</h3>
+                <p>Controlla lo stato dei tavoli e del bancone, prendi ordinazioni o gestisci i pagamenti.</p>
+            </div>
+            <div class="window-card" onclick="openScreen('presentation-menu')">
+                <div class="icon">📖</div>
+                <h3>Menu Ampio con Foto</h3>
+                <p>Esplora tutte le categorie del pub con foto reali e descrizioni dettagliate per i clienti.</p>
+            </div>
+            <div class="window-card" onclick="openScreen('cashier-select')">
+                <div class="icon">💶</div>
+                <h3>Cassa & Scontrini Fiscali</h3>
+                <p>Scegli il tavolo, paga singolo prodotto o intero conto (Contanti o POS) ed emetti scontrino.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 2. TAVOLI SCREEN ================= -->
+    <div id="screen-tables" class="screen">
+        <div class="section-header">
+            <h2>Gestione Sala & Tavoli (1 - 18)</h2>
+            <button class="home-btn" onclick="openScreen('home')">Indietro</button>
+        </div>
+        <p style="margin-bottom: 15px; font-size: 13px; color: var(--text-muted);">Clicca su un tavolo per aggiungere ordinazioni o vai direttamente in cassa.</p>
+        <div class="tables-grid" id="tables-grid-container"></div>
+    </div>
+
+    <!-- ================= 3. ORDINAZIONI SCREEN ================= -->
+    <div id="screen-order" class="screen">
+        <div class="section-header">
+            <h2 id="order-title">Comanda Tavolo</h2>
+            <button class="home-btn" onclick="openScreen('tables')">Torna ai Tavoli</button>
+        </div>
+        <div class="order-layout">
+            <div class="menu-sections-container" id="full-menu-container"></div>
+            <div class="notepad-container">
+                <h3 style="font-size: 14px; margin-bottom: 10px;">Blok Notes Ordinazione</h3>
+                <div class="notepad-items" id="notepad-items-list">
+                    <p style="color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 20px;">Nessun prodotto aggiunto</p>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 10px;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:14px; margin-bottom:10px;">
+                        <span>Totale Comanda:</span>
+                        <span id="notepad-total">€ 0.00</span>
+                    </div>
+                    <button class="primary-btn" onclick="saveOrder()">Conferma e Salva Comanda</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= 4. PRESENTAZIONE MENU COMPLETO CON FOTO ================= -->
+    <div id="screen-presentation-menu" class="screen">
+        <div class="section-header">
+            <h2>📖 Menu Ampio & Illustrato "Elisir"</h2>
+            <button class="home-btn" onclick="openScreen('home')">Chiudi</button>
+        </div>
+        <p style="margin-bottom: 15px; font-size: 13px; color: var(--text-muted);">Cocktail, birre artigianali, panini gourmet, taglieri e dolci artigianali.</p>
+        <div id="client-menu-view" style="max-width: 800px; margin: 0 auto; width: 100%;"></div>
+    </div>
+
+    <!-- ================= 5. SELEZIONE CASSA / PAGAMENTO ================= -->
+    <div id="screen-cashier-select" class="screen">
+        <div class="section-header">
+            <h2>Seleziona Tavolo da Incassare</h2>
+            <button class="home-btn" onclick="openScreen('home')">Indietro</button>
+        </div>
+        <p style="margin-bottom: 15px; font-size: 13px; color: var(--text-muted);">Scegli il tavolo da saldare (puoi pagare anche un prodotto alla volta).</p>
+        <div class="tables-grid" id="cashier-tables-grid"></div>
+    </div>
+
+    <!-- ================= 6. CASSA & SCONTRINO SCREEN ================= -->
+    <div id="screen-cashier" class="screen">
+        <div class="section-header">
+            <h2 id="cashier-title">Cassa & Pagamento</h2>
+            <button class="home-btn" onclick="openScreen('cashier-select')">Cambia Tavolo</button>
+        </div>
+        <div class="cash-layout">
+            <div>
+                <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; margin-bottom: 15px;">
+                    <h3 style="font-size: 14px; margin-bottom: 8px;">Prodotti Ordinati (Paga uno alla volta o tutto)</h3>
+                    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">Clicca "Paga" accanto a un singolo prodotto oppure salda l'intero totale.</p>
+                    
+                    <div id="cashier-items-summary" style="font-size: 13px; margin-bottom: 15px; max-height: 140px; overflow-y: auto;"></div>
+                    
+                    <div style="font-size: 16px; font-weight: bold; margin-bottom: 15px; display:flex; justify-content:space-between;">
+                        <span>Totale Residuo Tavolo:</span>
+                        <span id="cashier-total-amount" style="color: var(--primary);">€ 0.00</span>
+                    </div>
+
+                    <!-- Selezione Metodo di Pagamento -->
+                    <div style="margin-bottom: 12px;">
+                        <label style="font-size: 12px; display:block; margin-bottom:4px; font-weight:bold;">Metodo di Pagamento:</label>
+                        <select id="payment-method" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size:14px;" onchange="togglePaymentMethod()">
+                            <option value="cash">Contanti</option>
+                            <option value="pos">POS Elettronico (Bancomat/Carta)</option>
+                        </select>
+                    </div>
+
+                    <!-- Sezione Contanti -->
+                    <div id="cash-section">
+                        <div style="margin-bottom: 12px;">
+                            <label style="font-size: 12px; display:block; margin-bottom:4px;">Contanti Ricevuti (€):</label>
+                            <input type="number" id="cash-given" placeholder="Es. 20.00" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size:14px;" oninput="calculateChange()">
+                        </div>
+                        <div style="font-size: 14px; font-weight: bold; margin-bottom: 15px; display:flex; justify-content:space-between;">
+                            <span>Resto da dare:</span>
+                            <span id="cash-change">€ 0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Sezione POS (Simulatore Macchinario) -->
+                    <div id="pos-section" style="display:none;">
+                        <div class="pos-terminal">
+                            <div style="font-size: 10px; color: #88; margin-bottom: 4px;">TERMINALE POS PAX / INGENICO</div>
+                            <div class="pos-screen" id="pos-screen-text">
+                                PRONTO<br>INSERISCI / TOCCA CARTA<br>IMPORTO: € 0.00
+                            </div>
+                            <div class="pos-btn-grid">
+                                <button class="pos-action-btn" onclick="simulatePOS('contactless')">📶 Contactless</button>
+                                <button class="pos-action-btn" onclick="simulatePOS('chip')">💳 Inserisci Chip</button>
+                                <button class="pos-action-btn" onclick="simulatePOS('stripe')">🏷️ Striscia Banda</button>
+                                <button class="pos-action-btn" onclick="simulatePOS('applepay')">📱 Apple / Google Pay</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pulsante rigoroso per emettere scontrino e concludere il pagamento -->
+                    <button class="primary-btn" id="issue-receipt-btn" onclick="issueReceipt()" style="margin-top:10px;">Emetti Scontrino Fiscale & Registra Pagamento</button>
+                </div>
+            </div>
+            <div>
+                <h3 style="font-size: 14px; margin-bottom: 10px;">Anteprima Scontrino Fiscale</h3>
+                <div class="receipt-box" id="receipt-preview">
+                    <div class="receipt-center">
+                        <b>BAR / PUB ELISIR di San Giuseppe Jato</b><br>
+                        Corso Umberto I • San Giuseppe Jato (PA)<br>
+                        P.IVA 07123980821<br>
+                        ----------------------------------
+                    </div>
+                    <div id="receipt-details">
+                        <p style="text-align:center; color:#777; margin: 20px 0;">In attesa di transazione ed emissione scontrino...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- MENU AMPIO BAR/PUB ELISIR CON FOTO E DESCRIZIONI ---
+        const restaurantMenu = [
+            {
+                category: "Cockster & Pestati",
+                items: [
+                    { id: "cok_1", name: "Mojito Classico o Fruttato", price: 7.50, desc: "Rum Havana 3 Anni, lime fresco, foglie di menta, zucchero di canna e soda", img: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=150&auto=format&fit=crop&q=80" },
+                    { id: "cok_2", name: "Spritz Aperol / Campari", price: 6.00, desc: "Prosecco DOC, bitter scelto, soda e fetta d'arancia fresca", img: "https://images.unsplash.com/photo-1560512823-829485b8bf24?w=150&auto=format&fit=crop&q=80" },
+                    { id: "cok_3", name: "Gin Tonic Premium (Hendrick's)", price: 9.00, desc: "Gin botanico scozzese, tonica Fever-Tree, cetriolo o bacche di ginepro", img: "https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=150&auto=format&fit=crop&q=80" },
+                    { id: "cok_4", name: "Negroni Siciliano", price: 8.00, desc: "Vermouth rosso artigianale, Bitter Campari, Gin e scorza d'agrumi di Sicilia", img: "https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=150&auto=format&fit=crop&q=80" },
+                    { id: "cok_5", name: "Moscow Mule", price: 8.00, desc: "Vodka distillata, ginger beer speziata, succo di lime fresco e cetriolo", img: "https://images.unsplash.com/photo-1536935338788-846bb9981813?w=150&auto=format&fit=crop&q=80" }
+                ]
+            },
+            {
+                category: "Birre Artigianali & Spina",
+                items: [
+                    { id: "bir_1", name: "Birra Ichnusa Non Filtrata alla Spina (0.4L)", price: 5.00, desc: "Piena e corposa con luppoli selezionati", img: "https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=150&auto=format&fit=crop&q=80" },
+                    { id: "bir_2", name: "Birra Artigianale Siciliana APA (0.33L)", price: 6.00, desc: "Profumata con note agrumate e retrogusto equilibrato", img: "https://images.unsplash.com/photo-1608270102607-951918375688?w=150&auto=format&fit=crop&q=80" },
+                    { id: "bir_3", name: "Belgian Blond Ale (0.5L)", price: 6.50, desc: "Alta fermentazione, schiuma densa e aromi fruttati", img: "https://images.unsplash.com/photo-1571613174626-9d6614418f7d?w=150&auto=format&fit=crop&q=80" },
+                    { id: "bir_4", name: "Guinness Draught (Stout - 0.4L)", price: 6.00, desc: "Classica scura irlandese con caratteristica cremosità vellutata", img: "https://images.unsplash.com/photo-1563227812-0ea4c22e6cc8?w=150&auto=format&fit=crop&q=80" }
+                ]
+            },
+            {
+                category: "Panini Gourmet & Hamburger",
+                items: [
+                    { id: "pan_1", name: "Burger 'Elisir' Black Angus", price: 11.50, desc: "Bun artigianale, burger di Angus 200g, cheddar fuso, bacon croccante, salsa BBQ e insalata", img: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=150&auto=format&fit=crop&q=80" },
+                    { id: "pan_2", name: "Panino Bronte & Pistacchio", price: 10.00, desc: "Petto di pollo marinato alla griglia, crema di pistacchio di Bronte DOP, provola affumicata e granella", img: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=150&auto=format&fit=crop&q=80" },
+                    { id: "pan_3", name: "Burger Vegetariano di Ceci", price: 9.00, desc: "Burger artigianale di ceci e spezie, mayo vegana alle erbe, pomodoro secco e spinacino fresco", img: "https://images.unsplash.com/photo-1525059696034-4967a8e1dca2?w=150&auto=format&fit=crop&q=80" },
+                    { id: "pan_4", name: "Hot Dog Special New York", price: 7.50, desc: "Wurstel di suino artigianale, crauti speziati, salsa cheddar calda e cipolla croccante", img: "https://images.unsplash.com/photo-1619740455993-9e612b1af08a?w=150&auto=format&fit=crop&q=80" }
+                ]
+            },
+            {
+                category: "Taglieri, Friggitoria & Stuzzicheria",
+                items: [
+                    { id: "stz_1", name: "Tagliere Misto 'Elisir' per 2", price: 16.00, desc: "Selezione di salumi dei Monti Sicani, formaggi stagionati, miele di castagno, confetture e focaccia calda", img: "https://images.unsplash.com/photo-1541529086526-db283c563270?w=150&auto=format&fit=crop&q=80" },
+                    { id: "stz_2", name: "Maxi Tris di Patatine Fritte", price: 6.00, desc: "Patate dippers rustiche, twist speziate e chips artigianali con salse house", img: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=150&auto=format&fit=crop&q=80" },
+                    { id: "stz_3", name: "Anelli di Cipolla Pastellati (10 pz)", price: 5.50, desc: "Croccanti fuori e dolci dentro, serviti con salsa agrodolce", img: "https://images.unsplash.com/photo-1639024471283-03518883512d?w=150&auto=format&fit=crop&q=80" },
+                    { id: "stz_4", name: "Jalapeño Poppers Ripieni (6 pz)", price: 6.50, desc: "Peperoncini verdi piccanti ripieni di formaggio cremoso impanati e fritti", img: "https://images.unsplash.com/photo-1625813506062-0aeb1d7a094b?w=150&auto=format&fit=crop&q=80" }
+                ]
+            },
+            {
+                category: "Soft Drinks, Caffetteria & Dolci",
+                items: [
+                    { id: "sof_1", name: "Coca Cola / Fanta / Sprite 33cl", price: 3.00, desc: "In bottiglietta di vetro fresca", img: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=150&auto=format&fit=crop&q=80" },
+                    { id: "sof_2", name: "Energy Drink Red Bull", price: 4.00, desc: "Lattina 250ml", img: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=150&auto=format&fit=crop&q=80" },
+                    { id: "dol_1", name: "Cheesecake Artigianale ai Frutti di Bosco", price: 5.00, desc: "Cremosa con base di biscotto e colata di frutti rossi", img: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=150&auto=format&fit=crop&q=80" },
+                    { id: "dol_2", name: "Soufflé al Cioccolato Fondente Cuore Caldo", price: 5.50, desc: "Servito tiepido con ciuffo di panna montata fresca", img: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=150&auto=format&fit=crop&q=80" }
+                ]
+            }
+        ];
+
+        // Inizializzazione 18 tavoli / postazioni bar
+        let tablesData = {};
+        for(let i=1; i<=18; i++) {
+            tablesData[i] = { items: [], total: 0 };
+        }
+
+        let currentActiveTable = null;
+        let currentOrderItems = [];
+        let posAuthorized = false;
+
+        // --- GESTIONE SCHERMATE ---
+        function openScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen-' + screenName).classList.add('active');
+
+            if (screenName === 'tables') {
+                renderTablesGrid();
+            } else if (screenName === 'presentation-menu') {
+                renderClientMenu();
+            } else if (screenName === 'cashier-select') {
+                renderCashierTablesGrid();
+            }
+        }
+
+        // --- DARK / LIGHT MODE ---
+        function toggleTheme() {
+            const body = document.body;
+            body.setAttribute('data-theme', body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        }
+
+        // --- RENDER TAVOLI & BANCO ---
+        function renderTablesGrid() {
+            const container = document.getElementById('tables-grid-container');
+            container.innerHTML = '';
+            for(let i=1; i<=18; i++) {
+                let t = tablesData[i];
+                let isOcc = t.items.length > 0;
+                let label = i <= 14 ? `Tavolo ${i}` : `Banco ${i-14}`;
+                container.innerHTML += `
+                    <div class="table-box ${isOcc ? 'occupied' : ''}">
+                        <h4 onclick="selectTable(${i})">${label}</h4>
+                        <span onclick="selectTable(${i})">${isOcc ? '€ ' + t.total.toFixed(2) : 'Libero'}</span>
+                        <div class="table-actions">
+                            <button class="table-action-btn" onclick="selectTable(${i})">Ordina</button>
+                            ${isOcc ? `<button class="table-action-btn pay" onclick="goToCashier(${i})">Cassa</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function selectTable(tableNum) {
+            currentActiveTable = tableNum;
+            currentOrderItems = [...tablesData[tableNum].items];
+            let label = tableNum <= 14 ? `Tavolo ${tableNum}` : `Banco ${tableNum-14}`;
+            document.getElementById('order-title').innerText = `Comanda ${label}`;
+            renderFullMenu();
+            renderNotepad();
+            openScreen('order');
+        }
+
+        // --- RENDER MENU ORDINAZIONI CON FOTO ---
+        function renderFullMenu() {
+            const container = document.getElementById('full-menu-container');
+            container.innerHTML = '';
+            restaurantMenu.forEach(cat => {
+                let html = `<div class="category-title">${cat.category}</div>`;
+                cat.items.forEach(item => {
+                    let safeName = item.name.replace(/'/g, "\\'");
+                    html += `
+                        <div class="menu-item-row">
+                            <img src="${item.img}" class="menu-item-img" alt="${item.name}">
+                            <div class="menu-item-info">
+                                <h5>${item.name}</h5>
+                                <p>${item.desc}</p>
+                                <div class="price">€ ${item.price.toFixed(2)}</div>
+                            </div>
+                            <button class="add-item-btn" type="button" onclick="addItemToOrder('${item.id}', '${safeName}', ${item.price})">+</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML += html;
+            });
+        }
+
+        function addItemToOrder(id, name, price) {
+            currentOrderItems.push({ id, name, price });
+            renderNotepad();
+        }
+
+        function removeFromOrder(index) {
+            currentOrderItems.splice(index, 1);
+            renderNotepad();
+        }
+
+        function renderNotepad() {
+            const listContainer = document.getElementById('notepad-items-list');
+            const totalContainer = document.getElementById('notepad-total');
+            
+            if (currentOrderItems.length === 0) {
+                listContainer.innerHTML = `<p style="color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 20px;">Nessun prodotto aggiunto</p>`;
+                totalContainer.innerText = `€ 0.00`;
+                return;
+            }
+
+            let sum = 0;
+            listContainer.innerHTML = '';
+            currentOrderItems.forEach((item, idx) => {
+                sum += item.price;
+                listContainer.innerHTML += `
+                    <div class="notepad-row">
+                        <span>${item.name}</span>
+                        <span>€ ${item.price.toFixed(2)} <button type="button" onclick="removeFromOrder(${idx})" style="background:none; border:none; color:var(--primary); cursor:pointer; margin-left:8px; font-weight:bold;">✕</button></span>
+                    </div>
+                `;
+            });
+            totalContainer.innerText = `€ ${sum.toFixed(2)}`;
+        }
+
+        function saveOrder() {
+            if (currentActiveTable === null) return;
+            let sum = currentOrderItems.reduce((acc, curr) => acc + curr.price, 0);
+            tablesData[currentActiveTable] = {
+                items: [...currentOrderItems],
+                total: sum
+            };
+            let label = currentActiveTable <= 14 ? `Tavolo ${currentActiveTable}` : `Banco ${currentActiveTable-14}`;
+            alert(`Comanda di ${label} salvata con successo!`);
+            openScreen('tables');
+        }
+
+        // --- PRESENTAZIONE MENU CLIENTE ILLUSTRATO ---
+        function renderClientMenu() {
+            const container = document.getElementById('client-menu-view');
+            container.innerHTML = '';
+            restaurantMenu.forEach(cat => {
+                let html = `<div style="font-weight:bold; color:var(--primary); font-size:16px; margin: 20px 0 10px 0; border-bottom: 2px solid var(--primary); padding-bottom:4px;">${cat.category}</div>`;
+                cat.items.forEach(item => {
+                    html += `
+                        <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; background:var(--card-bg); border:1px solid var(--border-color); border-radius:10px; padding:10px;">
+                            <img src="${item.img}" style="width:65px; height:65px; border-radius:8px; object-fit:cover;" alt="${item.name}">
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <b style="font-size:14px;">${item.name}</b>
+                                    <span style="font-weight:bold; color:var(--primary); font-size:14px;">€ ${item.price.toFixed(2)}</span>
+                                </div>
+                                <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${item.desc}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML += html;
+            });
+        }
+
+        // --- GESTIONE CASSA & PAGAMENTO (UN PRODOTTO ALLA VOLTA O TUTTO) ---
+        function renderCashierTablesGrid() {
+            const container = document.getElementById('cashier-tables-grid');
+            container.innerHTML = '';
+            for(let i=1; i<=18; i++) {
+                let t = tablesData[i];
+                let isOcc = t.items.length > 0;
+                let label = i <= 14 ? `Tavolo ${i}` : `Banco ${i-14}`;
+                container.innerHTML += `
+                    <div class="table-box ${isOcc ? 'occupied' : ''}" onclick="${isOcc ? `goToCashier(${i})` : `alert('${label} è libero e non ha conti da saldare.')`}">
+                        <h4>${label}</h4>
+                        <span>${isOcc ? '€ ' + t.total.toFixed(2) : 'Libero'}</span>
+                        <small style="color:var(--primary); font-weight:bold;">${isOcc ? 'Incassa ➔' : ''}</small>
+                    </div>
+                `;
+            }
+        }
+
+        function goToCashier(tableNum) {
+            currentActiveTable = tableNum;
+            posAuthorized = false;
+            let t = tablesData[tableNum];
+            let label = tableNum <= 14 ? `Tavolo ${tableNum}` : `Banco ${tableNum-14}`;
+            document.getElementById('cashier-title').innerText = `Cassa - ${label}`;
+            
+            renderCashierSummary();
+            
+            // Reset campi pagamento
+            document.getElementById('payment-method').value = 'cash';
+            document.getElementById('cash-given').value = '';
+            document.getElementById('cash-change').innerText = `€ 0.00`;
+            document.getElementById('cash-section').style.display = 'block';
+            document.getElementById('pos-section').style.display = 'none';
+            document.getElementById('receipt-details').innerHTML = `<p style="text-align:center; color:#777; margin: 20px 0;">In attesa di transazione ed emissione scontrino...</p>`;
+            
+            openScreen('cashier');
+        }
+
+        function renderCashierSummary() {
+            let t = tablesData[currentActiveTable];
+            let summaryContainer = document.getElementById('cashier-items-summary');
+            let totalAmountElem = document.getElementById('cashier-total-amount');
+            
+            if (!t || t.items.length === 0) {
+                summaryContainer.innerHTML = `<p style="color:var(--text-muted); font-size:12px;">Nessun prodotto rimasto da pagare.</p>`;
+                totalAmountElem.innerText = `€ 0.00`;
+                return;
+            }
+
+            let html = '';
+            t.items.forEach((i, idx) => {
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border-bottom: 0.5px solid var(--border-color); padding-bottom:4px;">
+                        <span>${i.name}</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-weight:bold;">€ ${i.price.toFixed(2)}</span>
+                            <button class="table-action-btn pay" onclick="paySingleItem(${idx})" style="padding:4px 8px; font-size:11px;">Paga</button>
+                        </div>
+                    </div>
+                `;
+            });
+            summaryContainer.innerHTML = html;
+            totalAmountElem.innerText = `€ ${t.total.toFixed(2)}`;
+        }
+
+        // Pagamento rapido di un singolo prodotto dalla cassa
+        function paySingleItem(index) {
+            let t = tablesData[currentActiveTable];
+            let item = t.items[index];
+            
+            let now = new Date();
+            let dateStr = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT');
+            let label = currentActiveTable <= 14 ? `Tavolo ${currentActiveTable}` : `Banco ${currentActiveTable-14}`;
+
+            let singleReceiptHTML = `
+                <div class="receipt-center">
+                    <b>BAR / PUB ELISIR di San Giuseppe Jato</b><br>
+                    Corso Umberto I • San Giuseppe Jato (PA)<br>
+                    P.IVA 07123980821<br>
+                    Data: ${dateStr}<br>
+                    ${label} | SINGOLO PRODOTTO<br>
+                    ----------------------------------
+                </div>
+                <div class="receipt-line"><span>${item.name}</span><span>€ ${item.price.toFixed(2)}</span></div>
+                <div class="receipt-total receipt-line">
+                    <span>TOTALE PAGATO:</span>
+                    <span>€ ${item.price.toFixed(2)}</span>
+                </div>
+                <div class="receipt-center" style="margin-top:15px; font-size:10px;">
+                    Scontrino Fiscale Parziale Emesso.<br>
+                    Grazie per aver scelto Elisir!
+                </div>
+            `;
+
+            document.getElementById('receipt-details').innerHTML = singleReceiptHTML;
+
+            // Rimuovi il prodotto dal conto
+            t.items.splice(index, 1);
+            t.total = t.items.reduce((acc, curr) => acc + curr.price, 0);
+
+            renderCashierSummary();
+            alert(`Scontrino parziale emesso per "${item.name}" (€ ${item.price.toFixed(2)})!`);
+
+            if (t.items.length === 0) {
+                alert(`Tutti i prodotti saldati! Il tavolo è ora chiuso e liberato.`);
+                setTimeout(() => openScreen('tables'), 1000);
+            }
+        }
+
+        function togglePaymentMethod() {
+            let method = document.getElementById('payment-method').value;
+            if (method === 'cash') {
+                document.getElementById('cash-section').style.display = 'block';
+                document.getElementById('pos-section').style.display = 'none';
+                posAuthorized = true; 
+            } else {
+                document.getElementById('cash-section').style.display = 'none';
+                document.getElementById('pos-section').style.display = 'block';
+                posAuthorized = false; 
+                let total = tablesData[currentActiveTable].total.toFixed(2);
+                document.getElementById('pos-screen-text').innerHTML = `PRONTO<br>INSERISCI / TOCCA CARTA<br>TOTALE: € ${total}`;
+            }
+        }
+
+        function calculateChange() {
+            if (currentActiveTable === null) return;
+            let total = tablesData[currentActiveTable].total;
+            let given = parseFloat(document.getElementById('cash-given').value) || 0;
+            let change = given - total;
+            document.getElementById('cash-change').innerText = change >= 0 ? `€ ${change.toFixed(2)}` : `€ 0.00 (Mancano € ${Math.abs(change).toFixed(2)})`;
+        }
+
+        // --- SIMULATORE MACCHINARIO POS ---
+        function simulatePOS(type) {
+            if (currentActiveTable === null) return;
+            let total = tablesData[currentActiveTable].total.toFixed(2);
+            let screen = document.getElementById('pos-screen-text');
+            
+            let cardTypes = ["VISA •••• 5210", "MASTERCARD •••• 8831", "PAGOBANCOMAT •••• 1422", "APPLE PAY •••• 6634"];
+            let chosenCard = cardTypes[Math.floor(Math.random() * cardTypes.length)];
+
+            screen.innerHTML = `CONNESSIONE AL GATEWAY...`;
+            setTimeout(() => {
+                screen.innerHTML = `LETTURA CARTA:<br>${chosenCard}`;
+                setTimeout(() => {
+                    screen.innerHTML = `AUTORIZZAZIONE PIN...`;
+                    setTimeout(() => {
+                        posAuthorized = true;
+                        screen.innerHTML = `✅ PAGAMENTO APPROVATO!<br>IMPORTO: € ${total}<br>TRANSAZIONE RIUSCITA`;
+                    }, 1200);
+                }, 1000);
+            }, 800);
+        }
+
+        // --- EMISSIONE REALE SCONTRINO INTERO E CHIUSURA TAVOLO ---
+        function issueReceipt() {
+            if (currentActiveTable === null) return;
+            let method = document.getElementById('payment-method').value;
+
+            let t = tablesData[currentActiveTable];
+            if (t.total === 0) {
+                alert("Nessun importo da saldare per questo tavolo.");
+                return;
+            }
+
+            // Controllo rigoroso prima di emettere lo scontrino
+            if (method === 'pos' && !posAuthorized) {
+                alert("Attenzione: Completa prima la transazione sul terminale POS!");
+                return;
+            }
+
+            if (method === 'cash') {
+                let given = parseFloat(document.getElementById('cash-given').value) || 0;
+                if (given < t.total) {
+                    alert("Attenzione: L'importo in contanti ricevuto è inferiore al totale del conto!");
+                    return;
+                }
+            }
+
+            let now = new Date();
+            let dateStr = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT');
+            let paymentText = method === 'cash' ? 'CONTANTI' : 'PAGAMENTO ELETTRONICO (POS)';
+            let label = currentActiveTable <= 14 ? `Tavolo ${currentActiveTable}` : `Banco ${currentActiveTable-14}`;
+
+            let receiptHTML = `
+                <div class="receipt-center">
+                    <b>BAR / PUB ELISIR di San Giuseppe Jato</b><br>
+                    Corso Umberto I • San Giuseppe Jato (PA)<br>
+                    P.IVA 07123980821<br>
+                    Data: ${dateStr}<br>
+                    ${label} | Pagamento: ${paymentText}<br>
+                    ----------------------------------
+                </div>
+            `;
+
+            t.items.forEach(i => {
+                receiptHTML += `<div class="receipt-line"><span>${i.name}</span><span>€ ${i.price.toFixed(2)}</span></div>`;
+            });
+
+            receiptHTML += `
+                <div class="receipt-total receipt-line">
+                    <span>TOTALE COMPLESSIVO:</span>
+                    <span>€ ${t.total.toFixed(2)}</span>
+                </div>
+                <div class="receipt-center" style="margin-top:15px; font-size:10px;">
+                    Documento Commerciale di Vendita<br>
+                    Scontrino Fiscale Emesso Regolarmente.<br>
+                    Grazie e Arrivederci al Bar/Pub Elisir!
+                </div>
+            `;
+
+            // Mostra lo scontrino definitivo
+            document.getElementById('receipt-details').innerHTML = receiptHTML;
+
+            // Chiusura e liberazione del tavolo
+            tablesData[currentActiveTable] = { items: [], total: 0 };
+            
+            alert(`Scontrino emesso con successo! ${label} è ora chiuso e liberato.`);
+            
+            setTimeout(() => {
+                openScreen('tables');
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
